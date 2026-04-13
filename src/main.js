@@ -1,11 +1,10 @@
 import kaplay from "kaplay";
-// import "kaplay/global"; // uncomment if you want to use without the k. prefix
+import gameScene from "./scenes/game";
 
-const k = kaplay();
+kaplay();
 
-k.loadRoot("./"); // A good idea for Itch.io publishing later
-k.loadSprite("bean", "sprites/bean.png");
+// Définir la force de gravité (9.81 * 100 environ pour le feeling arcade)
+setGravity(1600);
 
-k.add([k.pos(120, 80), k.sprite("bean")]);
-
-k.onClick(() => k.addKaboom(k.mousePos()));
+scene("game", gameScene);
+go("game");
