@@ -1,8 +1,21 @@
 import { addGround } from "../entities/terrain";
 import { spawnProjectile } from "../entities/projectile";
+import { spawnObstacle } from "../entities/obstacle";
+import { spawnBonus } from "../entities/bonus";
 
 export default function gameScene() {
-  play("seagull", { volume: 0.5 });
+  add([
+    sprite("background", {
+      // On force l'image à prendre toute la largeur et hauteur de l'écran
+      width: width(),
+      height: height(),
+    }),
+    pos(0, 0),
+    fixed(), // Le fond ne bouge pas si la caméra bouge
+    z(-1), // On le met sur la couche -1 pour être SÛR qu'il soit derrière tout
+  ]);
+  // Le son ne se lancera qu'au premier clic/touche pour éviter l'erreur AudioContext
+  let musicStarted = false;
 
   const manager = add([
     "game_manager",
@@ -10,18 +23,26 @@ export default function gameScene() {
       speed: 350,
       maxSpeed: 1000,
       accel: 20,
+      score: 0,
     },
+  ]);
+
+  const scoreLabel = add([
+    text("Score: 0", { size: 24 }),
+    pos(24, 24),
+    fixed(),
   ]);
 
   addGround(0);
   addGround(width());
 
+  // --- Le Goéland (80x80px) ---
   const player = add([
-    rect(32, 32),
+    sprite("seagullIdle", { width: 80, height: 80 }),
     pos(150, height() / 2),
     area(),
     body(),
-    color(255, 0, 0),
+    anchor("center"),
     "player",
     {
       canShoot: true,
@@ -31,33 +52,68 @@ export default function gameScene() {
 
   player.onUpdate(() => {
     player.pos.x = 150;
+    scoreLabel.text = `Score: ${Math.floor(manager.score)}`;
 
-    if (player.pos.y < 0) {
-      player.pos.y = 0;
+    // LIMITE PLAFOND (L'oiseau ne peut pas sortir par le haut)
+    if (player.pos.y < 40) {
+      player.pos.y = 40;
       player.vel.y = 0;
     }
+
+    // Mort si chute
     if (player.pos.y > height()) {
       go("game");
     }
   });
 
-  onKeyPress("space", () => {
-    player.jump(800);
-  });
+  // --- Fonctions d'actions ---
+  const jump = () => {
+    // Lance la musique au premier saut si elle n'a pas démarré
+    if (!musicStarted) {
+      play("seagull", { volume: 0.5 });
+      musicStarted = true;
+    }
+
+    player.jump(700);
+    player.use(sprite("seagullFly", { width: 80, height: 80 }));
+    wait(0.3, () => {
+      if (player.exists()) {
+        player.use(sprite("seagullIdle", { width: 80, height: 80 }));
+      }
+    });
+  };
+
+  onKeyPress("space", jump);
+  onMousePress("left", jump);
 
   onMousePress("right", () => {
     if (player.canShoot) {
       spawnProjectile(player.pos);
+      // Change en sprite Poop sur le goéland
+      player.use(sprite("seagullPoop", { width: 80, height: 80 }));
       player.canShoot = false;
+
       wait(player.cooldown, () => {
-        player.canShoot = true;
+        if (player.exists()) {
+          player.use(sprite("seagullIdle", { width: 80, height: 80 }));
+          player.canShoot = true;
+        }
       });
     }
   });
 
-  player.onCollide("ground", () => {
-    shake();
-    addKaboom(player.pos);
-    wait(0.5, () => go("game"));
+  // --- Collisions ---
+  onCollide("projectile", "bonus", (p, b) => {
+    destroy(p);
+    destroy(b);
+    manager.score += 500;
+    addKaboom(b.pos);
   });
+
+  player.onCollide("obstacle", () => go("game"));
+  player.onCollide("ground", () => go("game"));
+
+  // Boucles de jeu
+  loop(2, () => spawnObstacle());
+  loop(5, () => spawnBonus());
 }

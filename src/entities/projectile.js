@@ -2,18 +2,17 @@ export function spawnProjectile(pPos) {
   const gameManager = get("game_manager")[0];
   const currentSpeed = gameManager ? gameManager.speed : 350;
 
-  const projectile = add([
-    rect(8, 8),
-    // On spawn légèrement plus bas (y + 35) pour éviter l'overlap
-    pos(pPos.x + 12, pPos.y + 35),
-    color(255, 255, 255),
-    // On demande explicitement d'ignorer les collisions avec le joueur
+  // 1. On crée l'objet sans l'objet { vel } à la fin
+  const p = add([
+    sprite("seagullPoop", { width: 40, height: 40 }),
+    pos(pPos.x, pPos.y + 30),
     area({ collisionIgnore: ["player"] }),
     body(),
     offscreen({ destroy: true }),
     "projectile",
   ]);
 
-  projectile.vel.x = -currentSpeed * 0.2;
-  projectile.vel.y = 100;
+  // 2. On assigne la vitesse directement à l'objet créé
+  p.vel.x = -currentSpeed * 0.2;
+  p.vel.y = 200;
 }
