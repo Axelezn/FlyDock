@@ -1,50 +1,63 @@
 import { addGround } from "../entities/terrain";
+import { spawnProjectile } from "../entities/projectile";
 
 export default function gameScene() {
-  // 1. Gestionnaire de vitesse (Game Manager)
-  // On crée un objet invisible qui contient la vitesse actuelle du jeu
+  play("seagull", { volume: 0.5 });
+
   const manager = add([
     "game_manager",
     {
-      speed: 350, // Vitesse de départ
-      maxSpeed: 1000, // Vitesse maximale
-      accel: 20, // Accélération par seconde
+      speed: 350,
+      maxSpeed: 1000,
+      accel: 20,
     },
   ]);
 
-  // Logique d'accélération progressive
-  onUpdate(() => {
-    if (manager.speed < manager.maxSpeed) {
-      manager.speed += manager.accel * dt();
-    }
-  });
-
-  // 2. Le Sol "Infini"
-  // On en place deux l'un après l'autre. Le composant 'scroller'
-  // les fera boucler automatiquement.
   addGround(0);
   addGround(width());
 
-  // 3. Le Joueur (le carré)
   const player = add([
     rect(32, 32),
-    pos(150, height() / 2), // Positionné à gauche
+    pos(150, height() / 2),
     area(),
     body(),
     color(255, 0, 0),
     "player",
+    {
+      canShoot: true,
+      cooldown: 0.3,
+    },
   ]);
 
-  // Contrôle de saut (Flappy Bird Style)
-  onKeyPress("space", () => {
-    player.jump(750);
+  player.onUpdate(() => {
+    player.pos.x = 150;
+
+    if (player.pos.y < 0) {
+      player.pos.y = 0;
+      player.vel.y = 0;
+    }
+    if (player.pos.y > height()) {
+      go("game");
+    }
   });
 
-  // Condition de défaite (Collision avec le sol)
+  onKeyPress("space", () => {
+    player.jump(800);
+  });
+
+  onMousePress("right", () => {
+    if (player.canShoot) {
+      spawnProjectile(player.pos);
+      player.canShoot = false;
+      wait(player.cooldown, () => {
+        player.canShoot = true;
+      });
+    }
+  });
+
   player.onCollide("ground", () => {
     shake();
     addKaboom(player.pos);
-    // On attend un court instant avant de recommencer
     wait(0.5, () => go("game"));
   });
 }
