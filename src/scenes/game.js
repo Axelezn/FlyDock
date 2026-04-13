@@ -33,6 +33,12 @@ export default function gameScene() {
     fixed(),
   ]);
 
+  const lifeLabel = add([
+    text("Vies: 3", { size: 24 }),
+    pos(24, 60),
+    fixed(),
+  ]);
+
   addGround(0);
   addGround(width());
 
@@ -45,6 +51,7 @@ export default function gameScene() {
     anchor("center"),
     "player",
     {
+      health: 3,
       canShoot: true,
       cooldown: 0.3,
     },
@@ -52,7 +59,9 @@ export default function gameScene() {
 
   player.onUpdate(() => {
     player.pos.x = 150;
+    manager.score += dt()*20;
     scoreLabel.text = `Score: ${Math.floor(manager.score)}`;
+    lifeLabel.text = `Vies: ${player.health}`;
 
     // LIMITE PLAFOND (L'oiseau ne peut pas sortir par le haut)
     if (player.pos.y < 40) {
@@ -102,6 +111,14 @@ export default function gameScene() {
     }
   });
 
+  function takeDamage(player) {
+    player.health -= 1;
+
+    if (player.health <= 0) {;
+        go("game");
+    }
+  }
+
   // --- Collisions ---
   onCollide("projectile", "bonus", (p, b) => {
     destroy(p);
@@ -110,8 +127,8 @@ export default function gameScene() {
     addKaboom(b.pos);
   });
 
-  player.onCollide("obstacle", () => go("game"));
-  player.onCollide("ground", () => go("game"));
+  player.onCollide("obstacle", () => takeDamage(player));
+  player.onCollide("ground", () => takeDamage(player));
 
   // Boucles de jeu
   loop(2, () => spawnObstacle());
