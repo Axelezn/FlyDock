@@ -14,6 +14,14 @@ export default function gameScene() {
     fixed(), // Le fond ne bouge pas si la caméra bouge
     z(-1), // On le met sur la couche -1 pour être SÛR qu'il soit derrière tout
   ]);
+  add([
+    rect(200, 80),       // taille du cadre
+    pos(10, 10),
+    color(0, 0, 0),      // noir
+    opacity(0.5),        // transparence
+    fixed(),             // reste à l'écran
+    z(1),               // au-dessus du fond
+  ]);
   // Le son ne se lancera qu'au premier clic/touche pour éviter l'erreur AudioContext
   let musicStarted = false;
 
@@ -31,12 +39,14 @@ export default function gameScene() {
     text("Score: 0", { size: 24 }),
     pos(24, 24),
     fixed(),
+    z(2)
   ]);
 
   const lifeLabel = add([
     text("Vies: 3", { size: 24 }),
     pos(24, 60),
     fixed(),
+    z(2)
   ]);
 
   addGround(0);
