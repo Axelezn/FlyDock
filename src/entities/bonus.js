@@ -1,13 +1,18 @@
 import { mover } from "../components/mover";
 
 export function spawnBonus() {
+  const carModel = choose(["car1", "car2"]);
+  const carWidth = 120;
+  const carHeight = 60;
+  const groundHeight = 80; // Doit correspondre au G_SIZE de ground.js
+
   add([
-    rect(40, 40),
-    pos(width(), rand(100, height() - 150)),
-    color(255, 0, 255),
+    sprite(carModel, { width: carWidth, height: carHeight }),
+    // Y = Hauteur totale - hauteur du sol - hauteur de la voiture
+    pos(width() + 100, height() - groundHeight - carHeight),
     area(),
     mover(),
-    offscreen({ destroy: true }),
+    z(2),
     "bonus",
   ]);
 }
