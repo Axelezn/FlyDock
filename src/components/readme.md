@@ -1,0 +1,1 @@
+Compoants du jeu, par exemple la vie, les points

@@ -1,0 +1,1 @@
+Fabriques d'objets, player.js, obstacle.js
