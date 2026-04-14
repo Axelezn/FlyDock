@@ -2,6 +2,8 @@ export function loadAssets() {
   // On retire "../public/" car Vite sert ce dossier comme étant la racine "/"
   loadSound("seagull", "sounds/seagull.mp3");
   loadSound("poopSound", "sounds/poopSound.m4a");
+  loadSound("klaxonbateau", "sounds/klaxonbateau.mp3");
+  loadSound("death", "sounds/death.mp3");
 
   loadSprite("seagullIdle", "sprites/seagullIdle.png");
   loadSprite("seagullFly", "sprites/seagullFly.png");
@@ -19,4 +21,9 @@ export function loadAssets() {
   loadSprite("containervcma", "sprites/containerVcma.png");
   loadSprite("containervmanu", "sprites/containerVmanu.png");
   loadSprite("containervharopa", "sprites/containerVharopa.png");
+  loadSprite("playbtn", "sprites/playbtn.png");
+  loadSprite("soundon", "sprites/soundon.png");
+  loadSprite("soundoff", "sprites/soundoff.png");
+  loadSprite("containerVrose", "sprites/containerVrose.png");
+  loadSprite("containerrose", "sprites/containerrose.png");
 }

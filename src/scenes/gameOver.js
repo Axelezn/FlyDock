@@ -1,84 +1,126 @@
 export default function gameOverScene(data) {
-  // RÉCUPÉRATION SÉCURISÉE
-  let highScore = Number(localStorage.getItem("highScore")) || 0;
+  // --- 1. GESTION DU SCORE ET RECORD ---
+  const currentScore = Math.floor(data.score);
+  const oldHighScore = Number(localStorage.getItem("highScore")) || 0;
   let isNewRecord = false;
 
-  // Comparaison de nombres
-  if (data.score > highScore) {
-    highScore = data.score;
-    localStorage.setItem("highScore", highScore.toString());
+  if (currentScore > oldHighScore) {
+    localStorage.setItem("highScore", currentScore);
     isNewRecord = true;
   }
+  const highScore = isNewRecord ? currentScore : oldHighScore;
 
-  add([
-    sprite("background", { width: width(), height: height() }),
-    pos(0, 0),
-    fixed(),
-  ]);
+  // --- 2. AUDIO : Lancement du son de mort ---
+  if (window.deathHandle) window.deathHandle.stop();
+  window.deathHandle = play("death", { volume: 0.5 });
 
-  add([
-    rect(width(), height()),
-    pos(0, 0),
-    color(0, 0, 0),
-    opacity(0.8),
-    fixed(),
-  ]);
+  // --- 3. DÉCOR ET OVERLAY ---
+  add([sprite("background", { width: width(), height: height() }), pos(0, 0)]);
 
+  // Filtre sombre pour faire ressortir le texte
+  add([rect(width(), height()), color(0, 0, 0), opacity(0.6)]);
+
+  // --- 4. TEXTES ---
+  // Titre
   add([
-    text("GAME OVER", { size: 80 }),
+    text("GAME OVER", { size: 60, font: "sans-serif" }),
     pos(center().x, height() * 0.2),
     anchor("center"),
-    color(255, 50, 50),
-    outline(6, rgb(0, 0, 0)),
+    outline(4, rgb(0, 0, 0)),
   ]);
 
+  // Score Actuel
   add([
-    text(`SCORE : ${data.score}`, { size: 35 }),
+    text(`SCORE : ${currentScore}`, { size: 40 }),
     pos(center().x, height() * 0.35),
     anchor("center"),
-    outline(4, rgb(0, 0, 0)),
+    color(255, 255, 255),
   ]);
 
+  // Meilleur Score
   add([
-    text(isNewRecord ? "NOUVEAU RECORD !" : `MEILLEUR SCORE : ${highScore}`, {
-      size: 25,
-    }),
+    text(`MEILLEUR SCORE : ${highScore}`, { size: 24 }),
     pos(center().x, height() * 0.45),
     anchor("center"),
-    color(255, 218, 68),
-    outline(4, rgb(0, 0, 0)),
+    color(200, 200, 200),
   ]);
 
-  // Boutons REJOUER / MENU
-  const retryBtn = add([
-    rect(300, 70, { radius: 15 }),
-    pos(center().x, height() * 0.65),
+  // Badge Record (Si battu)
+  if (isNewRecord) {
+    const recordLabel = add([
+      text("NOUVEAU RECORD !", { size: 30 }),
+      pos(center().x, height() * 0.52),
+      anchor("center"),
+      color(255, 218, 68),
+    ]);
+
+    // Petit effet de clignotement pour le record
+    onUpdate(() => {
+      recordLabel.opacity = wave(0.2, 1, time() * 5);
+    });
+  }
+
+  // --- 5. BOUTONS INTERACTIFS ---
+
+  const stopAllAndGo = (scene) => {
+    if (window.deathHandle) window.deathHandle.stop();
+    if (window.klaxonHandle) window.klaxonHandle.stop();
+    if (window.seagullHandle) window.seagullHandle.stop();
+    go(scene);
+  };
+
+  // Bouton REJOUER
+  const btnReplay = add([
+    sprite("playbtn", { width: 180 }),
+    pos(center().x, height() * 0.7),
     anchor("center"),
-    color(255, 218, 68),
-    outline(4, rgb(0, 0, 0)),
     area(),
+    "btn",
   ]);
-  add([
-    text("REJOUER", { size: 30 }),
-    pos(center().x, height() * 0.65),
-    anchor("center"),
-    color(0, 0, 0),
-  ]);
-  retryBtn.onClick(() => go("game", { lives: 3, score: 0 }));
 
-  const menuBtn = add([
-    rect(300, 50, { radius: 10 }),
-    pos(center().x, height() * 0.8),
+  add([
+    pos(center().x, height() * 0.78),
+    anchor("center"),
+  ]);
+
+  // Bouton MENU
+  const btnMenu = add([
+    rect(200, 50, { radius: 10 }),
+    pos(center().x, height() * 0.88),
+    anchor("center"),
+    color(100, 100, 100),
+    area(),
+    outline(3, rgb(255, 255, 255)),
+    "btn",
+  ]);
+
+  add([
+    text("MENU PRINCIPAL", { size: 18 }),
+    pos(center().x, height() * 0.88),
     anchor("center"),
     color(255, 255, 255),
-    outline(3, rgb(0, 0, 0)),
-    area(),
   ]);
-  add([
-    text("MENU", { size: 20 }),
-    pos(center().x, height() * 0.8),
-    anchor("center"),
-    color(0, 0, 0),
-  ]);
-  menuBtn.onClick(() => go("menu"));
+
+  // --- 6. LOGIQUE DES BOUTONS ---
+
+  btnReplay.onClick(() => stopAllAndGo("game"));
+  btnMenu.onClick(() => stopAllAndGo("menu"));
+
+  // Touche Espace pour rejouer vite
+  onKeyPress("space", () => stopAllAndGo("game"));
+
+  // Effets au survol (Hover)
+  onUpdate("btn", (b) => {
+    if (b.isHovering()) {
+      b.scale = vec2(1.1);
+      setCursor("pointer");
+    } else {
+      b.scale = vec2(1);
+    }
+
+    // Si aucun bouton n'est survolé, on remet le curseur par défaut
+    if (!btnReplay.isHovering() && !btnMenu.isHovering()) {
+      setCursor("default");
+    }
+  });
 }
