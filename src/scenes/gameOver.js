@@ -23,10 +23,9 @@ export default function gameOverScene(data) {
   // --- 4. TEXTES ---
   // Titre
   add([
-    text("GAME OVER", { size: 60, font: "sans-serif" }),
+    sprite("gameOver", { width: 750 }),
     pos(center().x, height() * 0.2),
     anchor("center"),
-    outline(4, rgb(0, 0, 0)),
   ]);
 
   // Score Actuel

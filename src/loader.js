@@ -28,4 +28,5 @@ export function loadAssets() {
   loadSprite("containerrose", "sprites/containerrose.png");
   loadSprite("newGame", "sprites/newGame.png");
   loadSprite("menu", "sprites/menu.png");
+  loadSprite("gameOver", "sprites/gameOver.png");
 }
