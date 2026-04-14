@@ -26,4 +26,6 @@ export function loadAssets() {
   loadSprite("soundoff", "sprites/soundoff.png");
   loadSprite("containerVrose", "sprites/containerVrose.png");
   loadSprite("containerrose", "sprites/containerrose.png");
+  loadSprite("newGame", "sprites/newGame.png");
+  loadSprite("menu", "sprites/menu.png");
 }
