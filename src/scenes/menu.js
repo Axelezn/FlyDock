@@ -1,8 +1,8 @@
 export default function menuScene() {
   const highScore = Number(localStorage.getItem("highScore")) || 0;
 
-  // On vérifie l'état actuel du volume au chargement de la scène
-  let isMuted = volume() === 0;
+  // --- CORRECTION VOLUME : getVolume() au lieu de volume() ---
+  let isMuted = getVolume() === 0;
 
   // 1. FOND DE SCÈNE
   add([
@@ -22,29 +22,42 @@ export default function menuScene() {
     z(1),
   ]);
 
-  // 3. TITRE DU JEU
+  // 3. LOGO DU JEU
   add([
-    text("FLYDOCK", { size: Math.floor(width() * 0.08) }),
+    sprite("logoFlyDock", { width: 500 }),
     pos(center().x, height() * 0.15),
     anchor("center"),
-    outline(8, rgb(0, 0, 0)),
     z(10),
   ]);
 
   // 4. MEILLEUR SCORE
   add([
     text(`MEILLEUR SCORE : ${highScore}`, { size: 24 }),
-    pos(center().x, height() * 0.25),
+    pos(center().x, height() * 0.3),
     anchor("center"),
     color(255, 218, 68),
     outline(4, rgb(0, 0, 0)),
     z(10),
   ]);
 
-  // 5. BOÎTE DES RÈGLES
-  const rulesW = width() * 0.5;
-  const rulesH = height() * 0.35;
-  const rulesPos = vec2(center().x, height() * 0.45);
+  // 5. BOUTON DE SKINS
+  const skinBtn = add([
+    // --- CORRECTION SPRITE : "skinbtn" au lieu de "skin" ---
+    sprite("skinbtn", { width: 220 }),
+    pos(center().x, height() * 0.6),
+    anchor("center"),
+    area(),
+    z(10),
+    "skin_btn",
+  ]);
+
+  // Activation du bouton Skin
+  skinBtn.onClick(() => go("skinMenu"));
+
+  // 6. BOÎTE DES RÈGLES
+  const rulesW = width() * 0.2;
+  const rulesH = height() * 0.25;
+  const rulesPos = vec2(200, height() * 0.2);
 
   add([
     rect(rulesW, rulesH, { radius: 20 }),
@@ -59,11 +72,10 @@ export default function menuScene() {
     text(
       "LES REGLES DE FLYDOCK :\n\n" +
         "ESPACE : VOLER\n" +
-        "CLIC DROIT : EXCREMENTS\n\n" +
+        "CLIC DROIT : SURPRISE\n\n" +
         "POINTS :\n" +
-        "VOITURES : 500p\n" +
-        "PIETONS : 300p",
-      { size: 20, width: rulesW * 0.9, align: "center" },
+        "VOITURES : 500p",
+      { size: 18, width: rulesW * 0.9, align: "center" },
     ),
     pos(rulesPos),
     anchor("center"),
@@ -71,12 +83,10 @@ export default function menuScene() {
     z(6),
   ]);
 
-  // 6. BOUTON PLAY
-  const btnPos = vec2(center().x, height() * 0.8);
-
+  // 7. BOUTON PLAY
   const startBtn = add([
     sprite("playbtn", { width: 220 }),
-    pos(btnPos),
+    pos(center().x, height() * 0.8),
     anchor("center"),
     area(),
     z(10),
@@ -85,9 +95,8 @@ export default function menuScene() {
 
   startBtn.onClick(() => go("game"));
 
-  // 7. BOUTON SON (Bas à droite)
+  // 8. BOUTON SON
   const soundBtn = add([
-    // Affiche le sprite en fonction de si le son est coupé ou non
     sprite(isMuted ? "soundoff" : "soundon", { width: 60, height: 60 }),
     pos(width() - 50, height() - 50),
     anchor("center"),
@@ -97,40 +106,44 @@ export default function menuScene() {
     "sound_btn",
   ]);
 
-  // Logique de switch
   soundBtn.onClick(() => {
     isMuted = !isMuted;
-    volume(isMuted ? 0 : 1); // Coupe ou active le son global du jeu
+    // --- CORRECTION VOLUME : setVolume() au lieu de volume() ---
+    setVolume(isMuted ? 0 : 1);
 
-    // On met à jour le sprite immédiatement
     soundBtn.use(
       sprite(isMuted ? "soundoff" : "soundon", { width: 60, height: 60 }),
     );
   });
 
-  // 8. ANIMATIONS DE SURVOL (Hover)
-  // Animation pour le bouton Start
-  onUpdate("start_btn", (b) => {
-    if (b.isHovering()) {
-      b.scale = vec2(1.1);
+  // 9. ANIMATIONS DE SURVOL (Hover)
+
+  // Fonction pour mettre à jour le curseur globalement
+  function updateCursor() {
+    if (
+      startBtn.isHovering() ||
+      soundBtn.isHovering() ||
+      skinBtn.isHovering()
+    ) {
       setCursor("pointer");
     } else {
-      b.scale = vec2(1);
-    }
-  });
-
-  // Animation pour le bouton Son
-  onUpdate("sound_btn", (s) => {
-    if (s.isHovering()) {
-      s.scale = vec2(1.1);
-      setCursor("pointer");
-    } else {
-      s.scale = vec2(1);
-    }
-
-    // Reset le curseur si on ne survole aucun des deux boutons
-    if (!s.isHovering() && !startBtn.isHovering()) {
       setCursor("default");
     }
+  }
+
+  onUpdate("start_btn", (b) => {
+    b.scale = b.isHovering() ? vec2(1.1) : vec2(1);
+    updateCursor();
+  });
+
+  onUpdate("sound_btn", (s) => {
+    s.scale = s.isHovering() ? vec2(1.1) : vec2(1);
+    updateCursor();
+  });
+
+  // Ajout de l'animation pour le bouton Skin
+  onUpdate("skin_btn", (sk) => {
+    sk.scale = sk.isHovering() ? vec2(1.1) : vec2(1);
+    updateCursor();
   });
 }

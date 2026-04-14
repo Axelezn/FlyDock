@@ -23,10 +23,9 @@ export default function gameOverScene(data) {
   // --- 4. TEXTES ---
   // Titre
   add([
-    text("GAME OVER", { size: 60, font: "sans-serif" }),
+    sprite("gameOver", { width: 750 }),
     pos(center().x, height() * 0.2),
     anchor("center"),
-    outline(4, rgb(0, 0, 0)),
   ]);
 
   // Score Actuel
@@ -71,34 +70,22 @@ export default function gameOverScene(data) {
 
   // Bouton REJOUER
   const btnReplay = add([
-    sprite("playbtn", { width: 180 }),
+    sprite("newGame", { width: 200 }),
     pos(center().x, height() * 0.7),
     anchor("center"),
     area(),
     "btn",
   ]);
 
-  add([
-    pos(center().x, height() * 0.78),
-    anchor("center"),
-  ]);
+  add([pos(center().x, height() * 0.78), anchor("center")]);
 
   // Bouton MENU
   const btnMenu = add([
-    rect(200, 50, { radius: 10 }),
     pos(center().x, height() * 0.88),
     anchor("center"),
-    color(100, 100, 100),
+    sprite("menu", { width: 200 }),
     area(),
-    outline(3, rgb(255, 255, 255)),
     "btn",
-  ]);
-
-  add([
-    text("MENU PRINCIPAL", { size: 18 }),
-    pos(center().x, height() * 0.88),
-    anchor("center"),
-    color(255, 255, 255),
   ]);
 
   // --- 6. LOGIQUE DES BOUTONS ---

@@ -9,6 +9,7 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
   let isPaused = false;
   let seagullSoundPlayed = false;
   const highScore = Number(localStorage.getItem("highScore")) || 0;
+  const skinId = localStorage.getItem("selectedSkin") || "mouette";
 
   if (window.deathHandle) {
     window.deathHandle.stop();
@@ -23,19 +24,19 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
     z(0),
   ]);
 
-  // --- 2. MANAGER (Avec paramètres de vitesse) ---
+  // --- 2. MANAGER ---
   const manager = add([
     "game_manager",
     {
-      speed: 350, // Vitesse de départ
-      maxSpeed: 1200, // Vitesse maximum (tu peux l'augmenter pour plus de défi)
-      accel: 8, // Points de vitesse gagnés par seconde
+      speed: 350,
+      maxSpeed: 1200,
+      accel: 8,
       score: data.score,
       lives: data.lives,
     },
   ]);
 
-  // --- 3. SCOREBOARD (HUD) ---
+  // --- 3. HUD (SCORE & CŒURS) ---
   const hudFrame = add([
     rect(240, 110, { radius: 10 }),
     pos(20, 20),
@@ -81,8 +82,8 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
 
   // --- 4. JOUEUR ---
   const player = add([
-    sprite("seagullIdle", { width: 80, height: 80 }),
-    pos(150, height() / 2),
+    sprite(`${skinId}Idle`, { width: 80, height: 80 }),
+    pos(250, height() / 2),
     area(),
     body(),
     anchor("center"),
@@ -91,75 +92,73 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
     { canShoot: true, cooldown: 0.3, isInvincible: false },
   ]);
 
-  function activateInvincibility() {
-    player.isInvincible = true;
-    const blink = loop(0.1, () => {
-      player.opacity = player.opacity === 1 ? 0.3 : 1;
+  // --- 5. LOGIQUE DE PAUSE MODIFIÉE ---
+  function togglePause() {
+    isPaused = !isPaused;
+    get("*").forEach((obj) => {
+      if (!obj.is("pause_ui")) {
+        obj.paused = isPaused;
+      }
     });
-    wait(5, () => {
-      blink.cancel();
-      player.opacity = 1;
-      player.isInvincible = false;
-    });
-  }
 
-  function handleDeath() {
-    if (player.isInvincible) return;
+    if (isPaused) {
+      // 1. Overlay noir
+      add([
+        rect(width(), height()),
+        color(0, 0, 0),
+        opacity(0.5),
+        fixed(),
+        z(200),
+        "pause_ui",
+        "pause_menu_screen",
+      ]);
 
-    manager.lives--;
-    drawHearts();
+      // 2. Texte PAUSE
+      add([
+        text("PAUSE", { size: 48 }),
+        pos(center().x, center().y - 80),
+        anchor("center"),
+        fixed(),
+        z(201),
+        "pause_ui",
+        "pause_menu_screen",
+      ]);
 
-    play("death", { volume: 0.4, detune: 500 });
+      // 3. Remplacement du texte par le sprite backBtn pour reprendre
+      const resumeBtn = add([
+        sprite("backBtn", { width: 160 }),
+        pos(center().x, center().y),
+        area(),
+        anchor("center"),
+        fixed(),
+        z(201),
+        "pause_ui",
+        "pause_menu_screen",
+      ]);
 
-    if (manager.lives <= 0) {
-      if (window.klaxonHandle) window.klaxonHandle.stop();
-      if (window.seagullHandle) window.seagullHandle.stop();
-      go("gameOver", { score: Math.floor(manager.score) });
+      resumeBtn.onClick(togglePause);
+
+      // 4. Bouton MENU sur l'overlay
+      const menuBtn = add([
+        sprite("menu", { width: 160 }),
+        pos(center().x, center().y + 100),
+        area(),
+        anchor("center"),
+        fixed(),
+        z(201),
+        "pause_ui",
+        "pause_menu_screen",
+      ]);
+
+      menuBtn.onClick(() => {
+        go("menu");
+      });
     } else {
-      shake(10);
-      activateInvincibility();
+      destroyAll("pause_menu_screen");
     }
   }
 
-  // --- 5. LOGIQUE UPDATE (Vitesse + Score) ---
-  player.onUpdate(() => {
-    if (isPaused) return;
-
-    // AUGMENTATION DE LA VITESSE
-    if (manager.speed < manager.maxSpeed) {
-      manager.speed += manager.accel * dt();
-    }
-
-    player.pos.x = 150;
-
-    // Le score augmente aussi un peu plus vite si on va plus vite !
-    manager.score += dt() * (manager.speed / 30);
-    scoreLabel.text = `SCORE: ${Math.floor(manager.score)}`;
-
-    if (manager.score > highScore) {
-      highScoreLabel.text = `BEST : ${Math.floor(manager.score)}`;
-      highScoreLabel.color = rgb(255, 255, 255);
-    }
-
-    if (player.pos.y < 40) {
-      player.pos.y = 40;
-      player.vel.y = 0;
-    }
-
-    if (player.pos.y > height() + 100) {
-      manager.lives = 0;
-      handleDeath();
-    }
-  });
-
-  // --- 6. NETTOYAGE PROJECTILES ---
-  onUpdate("projectile", (p) => {
-    if (p.pos.x < -100 || p.pos.x > width() + 100 || p.pos.y > height() + 100) {
-      destroy(p);
-    }
-  });
-
-  // --- 7. ACTIONS ---
+  // --- 6. ACTIONS ---
   const jump = () => {
     if (isPaused) return;
     if (!seagullSoundPlayed) {
@@ -167,10 +166,10 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
       seagullSoundPlayed = true;
     }
     player.jump(800);
-    player.use(sprite("seagullFly", { width: 80, height: 80 }));
+    player.use(sprite(`${skinId}Fly`, { width: 80, height: 80 }));
     wait(0.2, () => {
       if (player.exists())
-        player.use(sprite("seagullIdle", { width: 80, height: 80 }));
+        player.use(sprite(`${skinId}Idle`, { width: 80, height: 80 }));
     });
   };
 
@@ -179,11 +178,11 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
     if (player.canShoot) {
       window.poopHandle = play("poopSound", { volume: 0.6 });
       spawnProjectile(player.pos);
-      player.use(sprite("seagullPoop", { width: 80, height: 80 }));
+      player.use(sprite(`${skinId}Poop`, { width: 80, height: 80 }));
       player.canShoot = false;
       wait(player.cooldown, () => {
         if (player.exists()) {
-          player.use(sprite("seagullIdle", { width: 80, height: 80 }));
+          player.use(sprite(`${skinId}Idle`, { width: 80, height: 80 }));
           player.canShoot = true;
         }
       });
@@ -193,14 +192,38 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
   onKeyPress("space", jump);
   onMousePress("left", jump);
   onMousePress("right", shoot);
+  onKeyPress("escape", togglePause);
 
-  // --- 8. COLLISIONS ---
-  onCollide("projectile", "bonus", (p, b) => {
-    destroy(p);
-    destroy(b);
-    manager.score += 500;
+  // --- 7. LOGIQUE UPDATE ---
+  player.onUpdate(() => {
+    if (isPaused) return;
+    if (manager.speed < manager.maxSpeed) {
+      manager.speed += manager.accel * dt();
+    }
+    player.pos.x = 250;
+    manager.score += dt() * (manager.speed / 30);
+    scoreLabel.text = `SCORE: ${Math.floor(manager.score)}`;
+    if (manager.score > highScore) {
+      highScoreLabel.text = `BEST : ${Math.floor(manager.score)}`;
+      highScoreLabel.color = rgb(255, 255, 255);
+    }
+    if (player.pos.y < 40) {
+      player.pos.y = 40;
+      player.vel.y = 0;
+    }
+    if (player.pos.y > height() + 100) {
+      manager.lives = 0;
+      handleDeath();
+    }
   });
 
+  onUpdate("projectile", (p) => {
+    if (p.pos.x < -100 || p.pos.x > width() + 100 || p.pos.y > height() + 100) {
+      destroy(p);
+    }
+  });
+
+  // --- 8. COLLISIONS ---
   onCollide("projectile", "ground", (p) => {
     const impactPos = p.pos;
     destroy(p);
@@ -216,14 +239,37 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
     });
   });
 
-  player.onCollide("obstacle", () => {
-    if (isPaused) return;
-    handleDeath();
+  onCollide("projectile", "bonus", (p, b) => {
+    destroy(p);
+    let dirtySprite =
+      b.carColor === "car1"
+        ? "car1sale"
+        : b.carColor === "car2"
+          ? "car2sale"
+          : "";
+    if (dirtySprite !== "") {
+      b.use(sprite(dirtySprite, { width: 120, height: 67 }));
+      b.unuse("bonus");
+      manager.score += 500;
+      play("poopSound", { volume: 0.3, detune: 500 });
+    }
   });
 
+  player.onCollide("life_bonus", (heart) => {
+    if (manager.lives < 3) {
+      manager.lives++;
+      drawHearts();
+      hudFrame.outline.color = rgb(0, 255, 0);
+      wait(0.3, () => (hudFrame.outline.color = rgb(255, 255, 255)));
+    }
+    destroy(heart);
+  });
+
+  player.onCollide("obstacle", () => {
+    if (!isPaused) handleDeath();
+  });
   player.onCollide("ground", () => {
-    if (isPaused) return;
-    handleDeath();
+    if (!isPaused) handleDeath();
   });
 
   // --- 9. SPAWNS ---
@@ -236,21 +282,42 @@ export default function gameScene(data = { lives: 3, score: 0 }) {
     });
   });
 
-  // --- 10. PAUSE ---
+  // --- 10. BOUTON PAUSE (AGRANDI ET DÉPLACÉ EN BAS À DROITE) ---
   const pauseBtn = add([
-    sprite("pauseBtn", { width: 40, height: 40 }),
-    pos(width() - 40, 40),
+    sprite("pauseBtn", { width: 80, height: 80 }), // Taille doublée
+    pos(width() - 60, height() - 60), // Positionné en bas à droite
     area(),
     fixed(),
+    anchor("center"),
     z(100),
     "pause_ui",
   ]);
 
-  pauseBtn.onClick(() => {
-    isPaused = !isPaused;
-    get("*").forEach((obj) => {
-      if (!obj.is("pause_ui")) obj.paused = isPaused;
+  pauseBtn.onClick(togglePause);
+
+  // --- FONCTIONS UTILES ---
+  function activateInvincibility() {
+    player.isInvincible = true;
+    const blink = loop(0.1, () => {
+      player.opacity = player.opacity === 1 ? 0.3 : 1;
     });
-    pauseBtn.opacity = isPaused ? 0.5 : 1;
-  });
+    wait(2, () => {
+      blink.cancel();
+      player.opacity = 1;
+      player.isInvincible = false;
+    });
+  }
+
+  function handleDeath() {
+    if (player.isInvincible) return;
+    manager.lives--;
+    drawHearts();
+    play("hitSound", { volume: 0.6 });
+    if (manager.lives <= 0)
+      go("gameOver", { score: Math.floor(manager.score) });
+    else {
+      shake(10);
+      activateInvincibility();
+    }
+  }
 }

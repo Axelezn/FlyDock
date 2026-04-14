@@ -2,6 +2,7 @@ import kaplay from "kaplay";
 import gameScene from "./scenes/game";
 import menuScene from "./scenes/menu";
 import gameOverScene from "./scenes/gameOver";
+import skinMenu from "./scenes/skinMenu";
 import { loadAssets } from "./loader";
 
 const k = kaplay({
@@ -15,6 +16,7 @@ loadAssets();
 
 // Déclaration des scènes
 scene("menu", menuScene);
+scene("skinMenu", skinMenu);
 scene("game", gameScene);
 scene("gameOver", gameOverScene);
 
